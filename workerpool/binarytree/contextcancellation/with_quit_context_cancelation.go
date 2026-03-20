@@ -1,4 +1,4 @@
-package binarytree
+package contextcancellation
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func SameCtx(t1, t2 *tree.Tree) bool {
 	}
 }
 
-func mainCtx() {
+func MainCtx() {
 	ch := make(chan int)
 	go WalkCtx(context.Background(), tree.New(1), ch) // In Walk(), we don't need to quit early, so we send a background context
 	for v := range ch {

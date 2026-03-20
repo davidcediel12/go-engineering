@@ -1,4 +1,4 @@
-package binarytree
+package quitchannel
 
 import (
 	"fmt"
@@ -58,7 +58,7 @@ func Same(t1, t2 *tree.Tree) bool {
 	}
 }
 
-func main() {
+func MainQuit() {
 	ch := make(chan int)
 
 	go Walk(tree.New(1), ch, make(chan int)) // In Walk(), we don't need to quit early, so we send a channel without any control
