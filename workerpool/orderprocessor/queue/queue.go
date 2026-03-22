@@ -24,11 +24,9 @@ func (q *Queue) Start() {
 
 	var producerWg sync.WaitGroup
 	for range 10 {
-		producerWg.Add(1)
-		go func() {
-			defer producerWg.Done()
+		producerWg.Go(func() {
 			q.produce(ctx)
-		}()
+		})
 	}
 
 	go func() {
