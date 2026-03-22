@@ -30,17 +30,15 @@ func (q *Queue) Start() {
 	}
 
 	go func() {
+		defer close(q.queue)
 		producerWg.Wait()
-		close(q.queue)
 	}()
 
 	var wg sync.WaitGroup
 	for range q.maxWorkers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			q.consume()
-		}()
+		wg.Go(func() {
+			q.consume(ctx)
+		})
 	}
 	wg.Wait()
 }

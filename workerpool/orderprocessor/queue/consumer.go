@@ -1,6 +1,7 @@
 package orderprocessor
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,13 +9,22 @@ import (
 	"github.com/google/uuid"
 )
 
-func (q *Queue) consume() {
+func (q *Queue) consume(ctx context.Context) {
 	workerID := uuid.NewString()[:6]
 	color := gofakeit.RandomString(colors)
-	for order := range q.queue {
-		start := time.Now()
-		processOrder(order, workerID, color)
-		fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
+	for {
+		select {
+		case order, ok := <-q.queue:
+			if !ok {
+				return
+			}
+			start := time.Now()
+			processOrder(order, workerID, color)
+			fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
+		case <-ctx.Done():
+			return
+		}
+
 	}
 }
 
