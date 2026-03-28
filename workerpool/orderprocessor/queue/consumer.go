@@ -28,7 +28,7 @@ func (q *Queue) consume(ctx context.Context) {
 		case <-ctx.Done():
 			q.workerQuit <- struct{}{}
 			return
-		case <-time.After(5 * time.Second):
+		case <-time.After(2 * time.Second):
 			fmt.Printf("%s(Idle) Shuting down  worker %s%s\n", color, workerID, colorReset)
 			q.workerQuit <- struct{}{}
 			return

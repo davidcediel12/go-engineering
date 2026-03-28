@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/brianvoe/gofakeit/v7"
 )
 
 type Queue struct {
@@ -30,8 +32,9 @@ func (q *Queue) Start() {
 	defer cancel()
 
 	var producerWg sync.WaitGroup
-	for range 10 {
+	for range 1000 {
 		producerWg.Go(func() {
+			time.Sleep(time.Duration(time.Duration(gofakeit.IntN(2500)) * time.Second))
 			q.produce(ctx)
 		})
 	}
