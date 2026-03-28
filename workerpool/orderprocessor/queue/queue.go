@@ -7,14 +7,21 @@ import (
 )
 
 type Queue struct {
-	maxWorkers uint
-	queue      chan Order
+	maxWorkers               uint
+	activeWorkers            uint
+	queue                    chan Order
+	workerQuit               chan struct{}
+	workerStart              chan struct{}
+	channelCapacityThreshold uint
 }
 
 func New(maxWorkers uint) *Queue {
 	return &Queue{
-		maxWorkers: maxWorkers,
-		queue:      make(chan Order),
+		maxWorkers:               maxWorkers,
+		queue:                    make(chan Order, maxWorkers),
+		channelCapacityThreshold: maxWorkers / 2,
+		workerQuit:               make(chan struct{}, maxWorkers),
+		workerStart:              make(chan struct{}, maxWorkers),
 	}
 }
 
@@ -35,10 +42,25 @@ func (q *Queue) Start() {
 	}()
 
 	var wg sync.WaitGroup
-	for range q.maxWorkers {
-		wg.Go(func() {
-			q.consume(ctx)
-		})
+	wg.Go(func() {
+		q.consume(ctx)
+	})
+	working := true
+	for working {
+		if startNewRoutine := uint(len(q.queue)) > q.channelCapacityThreshold && q.activeWorkers < q.maxWorkers; startNewRoutine {
+			wg.Go(func() {
+				q.consume(ctx)
+			})
+		}
+		select {
+		case <-q.workerQuit:
+			q.activeWorkers--
+			working = q.activeWorkers > 0
+		case <-q.workerStart:
+			q.activeWorkers++
+		case <-ctx.Done():
+			working = false
+		}
 	}
 	wg.Wait()
 }

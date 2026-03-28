@@ -10,18 +10,27 @@ import (
 )
 
 func (q *Queue) consume(ctx context.Context) {
+	q.workerStart <- struct{}{}
 	workerID := uuid.NewString()[:6]
 	color := gofakeit.RandomString(colors)
+	fmt.Printf("%sStarting new worker %s%s\n", color, workerID, colorReset)
+
 	for {
 		select {
 		case order, ok := <-q.queue:
 			if !ok {
+				fmt.Printf("%s(Closed ch) Shuting down  worker %s%s\n", color, workerID, colorReset)
 				return
 			}
 			start := time.Now()
 			processOrder(order, workerID, color)
 			fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
 		case <-ctx.Done():
+			q.workerQuit <- struct{}{}
+			return
+		case <-time.After(5 * time.Second):
+			fmt.Printf("%s(Idle) Shuting down  worker %s%s\n", color, workerID, colorReset)
+			q.workerQuit <- struct{}{}
 			return
 		}
 
