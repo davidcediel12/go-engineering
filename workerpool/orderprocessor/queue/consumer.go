@@ -10,7 +10,6 @@ import (
 )
 
 func (q *Queue) consume(ctx context.Context) {
-	q.workerStart <- struct{}{}
 	workerID := uuid.NewString()[:6]
 	color := gofakeit.RandomString(colors)
 	fmt.Printf("%sStarting new worker %s%s\n", color, workerID, colorReset)
@@ -21,7 +20,7 @@ func (q *Queue) consume(ctx context.Context) {
 			if !ok {
 				fmt.Printf("%s(Closed ch) Shuting down  worker %s%s\n", color, workerID, colorReset)
 				q.closedQueueOnce.Do(func() {
-					close(q.closedQueue)
+					q.working = false
 				})
 				return
 			}
@@ -29,12 +28,11 @@ func (q *Queue) consume(ctx context.Context) {
 			processOrder(order, workerID, color)
 			fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
 		case <-ctx.Done():
-			q.idleWorker <- struct{}{}
+			q.stopWorker <- struct{}{}
 			return
 		case <-time.After(2 * time.Second):
-			q.idleWorker <- struct{}{}
-		case <-q.stopWorker:
 			fmt.Printf("%s(Idle) Shuting down  worker %s%s\n", color, workerID, colorReset)
+			q.stopWorker <- struct{}{}
 			return
 		}
 	}
@@ -45,13 +43,13 @@ func processOrder(order Order, workerID string, color string) {
 	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
 
 	fmt.Printf("%s%s performing the payment\n%s", color, workerID, colorReset)
-	time.Sleep(time.Duration(gofakeit.IntN(700)) * time.Millisecond)
+	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
 
 	fmt.Printf("%s%s update records and release resources\n%s", color, workerID, colorReset)
-	time.Sleep(time.Duration(gofakeit.IntN(700)) * time.Millisecond)
+	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
 
 	fmt.Printf("%s%s sending notification\n%s", color, workerID, colorReset)
-	time.Sleep(time.Duration(gofakeit.IntN(700)) * time.Millisecond)
+	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
 }
 
 var colors = []string{"\033[34m", "\033[31m", "\033[32m", "\033[33m"}
