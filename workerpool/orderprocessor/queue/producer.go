@@ -2,6 +2,7 @@ package orderprocessor
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brianvoe/gofakeit/v7"
 )
@@ -17,5 +18,6 @@ func (q *Queue) produce(ctx context.Context) {
 		totalAmount: gofakeit.Uint(),
 		items:       gofakeit.NiceColors(),
 	}:
+		fmt.Printf("Producing new order\n")
 	}
 }
