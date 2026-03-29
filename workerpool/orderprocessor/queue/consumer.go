@@ -20,6 +20,9 @@ func (q *Queue) consume(ctx context.Context) {
 		case order, ok := <-q.queue:
 			if !ok {
 				fmt.Printf("%s(Closed ch) Shuting down  worker %s%s\n", color, workerID, colorReset)
+				q.closedQueueOnce.Do(func() {
+					close(q.closedQueue)
+				})
 				return
 			}
 			start := time.Now()
