@@ -19,19 +19,22 @@ func (q *Queue) consume(ctx context.Context) {
 		case order, ok := <-q.queue:
 			if !ok {
 				fmt.Printf("%s(Closed ch) Shuting down  worker %s%s\n", color, workerID, colorReset)
-				q.stopWorker <- struct{}{}
 				return
 			}
 			start := time.Now()
 			processOrder(order, workerID, color)
 			fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
 		case <-ctx.Done():
-			q.stopWorker <- struct{}{}
 			return
 		case <-time.After(2 * time.Second):
-			fmt.Printf("%s(Idle) Shuting down  worker %s%s\n", color, workerID, colorReset)
-			q.stopWorker <- struct{}{}
-			return
+			fmt.Printf("%s(Idle)%s%s\n", color, workerID, colorReset)
+			select {
+			case <-q.tokens:
+				// Successfully released token -> exit
+				return
+			default:
+				// No token could be released (minWorkers reached)
+			}
 		}
 	}
 }
