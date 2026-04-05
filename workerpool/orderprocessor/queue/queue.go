@@ -16,7 +16,6 @@ type Queue struct {
 	stopWorker               chan struct{}
 	closedQueue              chan struct{}
 	closedQueueOnce          sync.Once
-	working                  bool
 	channelCapacityThreshold uint
 	printQueue               uint
 }
@@ -28,7 +27,6 @@ func New(maxWorkers uint) *Queue {
 		channelCapacityThreshold: maxWorkers / 2,
 		stopWorker:               make(chan struct{}),
 		closedQueue:              make(chan struct{}),
-		working:                  true,
 	}
 }
 
@@ -39,7 +37,7 @@ func (q *Queue) Start() {
 	var producerWg sync.WaitGroup
 	for range 50 {
 		producerWg.Go(func() {
-			time.Sleep(time.Duration(time.Duration(gofakeit.IntN(1500)+1500) * time.Millisecond))
+			time.Sleep(time.Duration(gofakeit.IntN(1500)+1500) * time.Millisecond)
 			q.produce(ctx)
 		})
 	}
@@ -54,25 +52,29 @@ func (q *Queue) Start() {
 		q.consume(ctx)
 	})
 
-	for q.working {
-		q.print()
-		startNewConsumer := (uint(len(q.queue)) > q.channelCapacityThreshold && q.activeWorkers < q.maxWorkers)
-		if startNewConsumer {
-			wg.Go(func() {
-				q.consume(ctx)
-			})
-			q.activeWorkers++
+	go func() {
+		working := true
+		for working {
+			q.print()
+			startNewConsumer := (uint(len(q.queue)) > q.channelCapacityThreshold && q.activeWorkers < q.maxWorkers)
+			if startNewConsumer {
+				wg.Go(func() {
+					q.consume(ctx)
+				})
+				q.activeWorkers++
+			}
+			select {
+			case <-q.stopWorker:
+				q.activeWorkers--
+			case <-ctx.Done():
+				fmt.Println("Context deadline")
+				working = false
+			case <-time.After(100 * time.Millisecond):
+				continue
+			}
 		}
-		select {
-		case <-q.stopWorker:
-			q.activeWorkers--
-		case <-ctx.Done():
-			fmt.Println("Context deadline")
-			q.working = false
-		case <-time.After(100 * time.Millisecond):
-			continue
-		}
-	}
+	}()
+
 	wg.Wait()
 }
 
