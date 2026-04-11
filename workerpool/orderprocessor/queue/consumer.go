@@ -41,17 +41,15 @@ func (q *Queue) consume(ctx context.Context) {
 }
 
 func processOrder(order Order, workerID string, color string) {
-	fmt.Printf("%s%s locking the order\n%s", color, workerID, colorReset)
+	// locking the order
 	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
-
-	fmt.Printf("%s%s performing the payment\n%s", color, workerID, colorReset)
+	//  performing the payment
 	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
-
-	fmt.Printf("%s%s update records and release resources\n%s", color, workerID, colorReset)
+	//  update records and release resources
 	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
-
-	fmt.Printf("%s%s sending notification\n%s", color, workerID, colorReset)
+	//  sending notification
 	time.Sleep(time.Duration(gofakeit.IntN(500)) * time.Millisecond)
+	fmt.Printf("%s%s order %d processed\n%s", color, workerID, order.orderID, colorReset)
 }
 
 var colors = []string{"\033[34m", "\033[31m", "\033[32m", "\033[33m"}
