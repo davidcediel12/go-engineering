@@ -13,7 +13,6 @@ type Queue struct {
 	maxWorkers        int64
 	minWorkers        int64
 	queue             chan Order
-	activeWorkers     int64
 	tokens            chan struct{} // Semaphore controlling max active workers
 	capacityThreshold int64
 	printQueue        uint
@@ -70,9 +69,7 @@ func (q *Queue) Start() {
 				fmt.Println("Context deadline")
 				return
 			case <-ticker.C:
-				queueLen := len(q.queue)
-
-				if moreWorkersNeeded := queueLen > int(q.capacityThreshold) && q.activeWorkers < q.maxWorkers; moreWorkersNeeded {
+				if moreWorkersNeeded := len(q.queue) > int(q.capacityThreshold) && q.activeWorkers() < int(q.maxWorkers); moreWorkersNeeded {
 					select {
 					case q.tokens <- struct{}{}: // Add new token
 						wg.Go(func() {
@@ -92,8 +89,12 @@ func (q *Queue) Start() {
 func (q *Queue) print() {
 	if q.printQueue == 10 {
 		fmt.Printf("Queue len: %d\n", len(q.queue))
-		fmt.Printf("Active workers: %d\n", len(q.tokens))
+		fmt.Printf("Active workers: %d\n", q.activeWorkers())
 		q.printQueue = 0
 	}
 	q.printQueue++
+}
+
+func (q *Queue) activeWorkers() int {
+	return len(q.tokens)
 }

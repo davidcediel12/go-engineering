@@ -3,7 +3,6 @@ package orderprocessor
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -11,8 +10,6 @@ import (
 )
 
 func (q *Queue) consume(ctx context.Context) {
-	atomic.AddInt64(&q.activeWorkers, 1)
-	defer atomic.AddInt64(&q.activeWorkers, -1)
 	workerID := uuid.NewString()[:6]
 	color := gofakeit.RandomString(colors)
 	fmt.Printf("%sStarting new worker %s%s\n", color, workerID, colorReset)
@@ -31,9 +28,9 @@ func (q *Queue) consume(ctx context.Context) {
 			fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
-			if q.activeWorkers > q.minWorkers {
-				fmt.Printf("%sIdle, dying (active workers=%d, min workers=%d) %s\n%s", color, q.activeWorkers, q.minWorkers, workerID, colorReset)
+		case <-ticker.C: // No messages have arrived in the ticker duration
+			if q.activeWorkers() > int(q.minWorkers) {
+				fmt.Printf("%sIdle, dying (active workers=%d, min workers=%d) %s\n%s", color, q.activeWorkers(), q.minWorkers, workerID, colorReset)
 				return
 			}
 		}
