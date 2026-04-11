@@ -1,0 +1,28 @@
+# --- Go Specifics ---
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, produced by `go test -coverprofile`
+*.out
+
+# Dependency directories (only if you aren't using Go Modules)
+# vendor/
+
+# --- VS Code Specifics ---
+.vscode/
+# If you want to share launch configurations or tasks, 
+# uncomment the lines below but keep the rest ignored:
+# !.vscode/launch.json
+# !.vscode/tasks.json
+# !.vscode/settings.json
+
+# --- OS / Generic ---
+.DS_Store
+Thumbs.db
