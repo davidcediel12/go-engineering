@@ -14,6 +14,7 @@ type Queue struct {
 	minWorkers        int64
 	queue             chan Order
 	tokens            chan struct{} // Semaphore controlling max active workers
+	done              chan struct{} // Workers will notify when queue is closed so coordinator can exit
 	capacityThreshold int64
 	printQueue        uint
 }
@@ -24,6 +25,7 @@ func New(maxWorkers int64) *Queue {
 		minWorkers:        1,
 		queue:             make(chan Order, maxWorkers),
 		tokens:            make(chan struct{}, maxWorkers),
+		done:              make(chan struct{}),
 		capacityThreshold: maxWorkers / 2,
 	}
 }
@@ -65,6 +67,8 @@ func (q *Queue) Start() {
 		for {
 			q.print()
 			select {
+			case <-q.done:
+				return
 			case <-ctx.Done():
 				fmt.Println("Context deadline")
 				return
