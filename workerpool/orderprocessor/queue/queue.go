@@ -58,7 +58,9 @@ func (q *Queue) Start() {
 			q.consume(ctx)
 		})
 	}
-	go func() {
+
+	// Coordinator is part of the lifecycle, so it is added to the wait group
+	wg.Go(func() {
 		ticker := time.NewTicker(100 * time.Millisecond)
 		defer ticker.Stop()
 		for {
@@ -82,7 +84,7 @@ func (q *Queue) Start() {
 				}
 			}
 		}
-	}()
+	})
 
 	wg.Wait()
 }
