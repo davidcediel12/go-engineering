@@ -10,21 +10,23 @@ import (
 )
 
 type Queue struct {
-	maxWorkers       uint
-	minWorkers       uint
-	queue            chan Order
-	tokens           chan struct{} // Semaphore controlling max active workers
-	messageThreshold uint
-	printQueue       uint
+	maxWorkers        uint
+	minWorkers        uint
+	queue             chan Order
+	activeWorkers     int64
+	minworkers        int64
+	tokens            chan struct{} // Semaphore controlling max active workers
+	capacityThreshold uint
+	printQueue        uint
 }
 
 func New(maxWorkers uint) *Queue {
 	return &Queue{
-		maxWorkers:       maxWorkers,
-		minWorkers:       1,
-		queue:            make(chan Order, maxWorkers),
-		tokens:           make(chan struct{}, maxWorkers),
-		messageThreshold: maxWorkers / 2,
+		maxWorkers:        maxWorkers,
+		minWorkers:        1,
+		queue:             make(chan Order, maxWorkers),
+		tokens:            make(chan struct{}, maxWorkers),
+		capacityThreshold: maxWorkers / 2,
 	}
 }
 
@@ -46,6 +48,14 @@ func (q *Queue) Start() {
 
 	// Scale up-down via tokens
 	var wg sync.WaitGroup
+
+	for range q.minWorkers {
+		wg.Go(func() {
+			q.tokens <- struct{}{}
+			defer func() { <-q.tokens }() // Release token
+			q.consume(ctx)
+		})
+	}
 	go func() {
 		ticker := time.NewTicker(100 * time.Millisecond)
 		defer ticker.Stop()
@@ -54,22 +64,19 @@ func (q *Queue) Start() {
 			select {
 			case <-ctx.Done():
 				fmt.Println("Context deadline")
+				return
 			case <-ticker.C:
 				queueLen := len(q.queue)
 				currentTokens := len(q.tokens)
 
-				if queueLen > int(q.messageThreshold) && currentTokens < int(q.maxWorkers) {
-					q.tokens <- struct{}{} // Add new token
-					wg.Go(func() { q.consume(ctx) })
-				}
-
-				if queueLen == 0 && currentTokens > int(q.minWorkers) {
+				if queueLen > int(q.capacityThreshold) && currentTokens < int(q.maxWorkers) {
 					select {
-					case <-q.tokens:
-						// Waiting a message from tokens channel
-						// When worker is idle, it will send a message to this channel
-						// And if it it can send it, it will terminate
-					default:
+					case q.tokens <- struct{}{}: // Add new token
+						wg.Go(func() {
+							defer func() { <-q.tokens }() // Release token
+							q.consume(ctx)
+						})
+					default: // Buffer is full
 					}
 				}
 			}

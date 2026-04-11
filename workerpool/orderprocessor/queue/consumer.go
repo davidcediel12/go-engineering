@@ -3,6 +3,7 @@ package orderprocessor
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -10,32 +11,23 @@ import (
 )
 
 func (q *Queue) consume(ctx context.Context) {
+	atomic.AddInt64(&q.activeWorkers, 1)
+	defer atomic.AddInt64(&q.activeWorkers, -1)
 	workerID := uuid.NewString()[:6]
 	color := gofakeit.RandomString(colors)
 	fmt.Printf("%sStarting new worker %s%s\n", color, workerID, colorReset)
 
-	for {
-		select {
-		case order, ok := <-q.queue:
-			if !ok {
-				fmt.Printf("%s(Closed ch) Shuting down  worker %s%s\n", color, workerID, colorReset)
-				return
-			}
-			start := time.Now()
-			processOrder(order, workerID, color)
-			fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
-		case <-ctx.Done():
+	select {
+	case order, ok := <-q.queue:
+		if !ok {
+			fmt.Printf("%s(Closed ch) Shuting down  worker %s%s\n", color, workerID, colorReset)
 			return
-		case <-time.After(2 * time.Second):
-			fmt.Printf("%s(Idle)%s%s\n", color, workerID, colorReset)
-			select {
-			case <-q.tokens:
-				// Successfully released token -> exit
-				return
-			default:
-				// No token could be released (minWorkers reached)
-			}
 		}
+		start := time.Now()
+		processOrder(order, workerID, color)
+		fmt.Printf("%sElapsed time for worker %s is %v\n%s", color, workerID, time.Since(start), colorReset)
+	case <-ctx.Done():
+		return
 	}
 }
 
