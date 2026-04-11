@@ -10,17 +10,16 @@ import (
 )
 
 type Queue struct {
-	maxWorkers        uint
-	minWorkers        uint
+	maxWorkers        int64
+	minWorkers        int64
 	queue             chan Order
 	activeWorkers     int64
-	minworkers        int64
 	tokens            chan struct{} // Semaphore controlling max active workers
-	capacityThreshold uint
+	capacityThreshold int64
 	printQueue        uint
 }
 
-func New(maxWorkers uint) *Queue {
+func New(maxWorkers int64) *Queue {
 	return &Queue{
 		maxWorkers:        maxWorkers,
 		minWorkers:        1,
@@ -31,14 +30,17 @@ func New(maxWorkers uint) *Queue {
 }
 
 func (q *Queue) Start() {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	var producerWg sync.WaitGroup
 	go func() {
 		defer close(q.queue)
 		defer producerWg.Wait()
-		for range 50 {
+		for i := range 50 {
+			if i == 25 {
+				time.Sleep(10 * time.Second)
+			}
 			time.Sleep(time.Duration(gofakeit.IntN(1500)) * time.Millisecond)
 			producerWg.Go(func() {
 				q.produce(ctx)
@@ -67,9 +69,8 @@ func (q *Queue) Start() {
 				return
 			case <-ticker.C:
 				queueLen := len(q.queue)
-				currentTokens := len(q.tokens)
 
-				if queueLen > int(q.capacityThreshold) && currentTokens < int(q.maxWorkers) {
+				if moreWorkersNeeded := queueLen > int(q.capacityThreshold) && q.activeWorkers < q.maxWorkers; moreWorkersNeeded {
 					select {
 					case q.tokens <- struct{}{}: // Add new token
 						wg.Go(func() {
