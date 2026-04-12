@@ -12,6 +12,6 @@ func main() {
 	if err != nil {
 		panic("invalid number of workers")
 	}
-	queue := orderprocessor.New(uint(workers))
+	queue := orderprocessor.New(int64(workers))
 	queue.Start()
 }
