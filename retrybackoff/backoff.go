@@ -47,7 +47,7 @@ func (b *Backoff) Do(ctx context.Context, operation func() error) error {
 		}
 	}
 	if !succeed {
-		return fmt.Errorf("operation failed after %d retries", b.retries)
+		return fmt.Errorf("operation failed after %d retries: %w", b.retries, err)
 	}
 	return nil
 }
