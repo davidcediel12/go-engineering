@@ -12,7 +12,7 @@ func WithBaseDelay(baseDelay time.Duration) Option {
 
 func WithJitter(jitter bool) Option {
 	return func(b *Backoff) {
-		b.jtter = jitter
+		b.jitter = jitter
 	}
 }
 

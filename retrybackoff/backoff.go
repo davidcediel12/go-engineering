@@ -11,13 +11,18 @@ import (
 
 type Backoff struct {
 	retries   int
-	jtter     bool
+	jitter    bool
 	baseDelay time.Duration
 	maxDelay  time.Duration
 }
 
 func New(options ...Option) *Backoff {
-	b := &Backoff{}
+	b := &Backoff{
+		retries:   3,
+		jitter:    true,
+		baseDelay: 200 * time.Millisecond,
+		maxDelay:  3 * time.Second,
+	}
 	for _, opt := range options {
 		opt(b)
 	}
@@ -54,7 +59,7 @@ func (b *Backoff) Do(ctx context.Context, operation func() error) error {
 
 func (b *Backoff) getDelay(retries int) time.Duration {
 	jitter := 0 * time.Millisecond
-	if b.jtter {
+	if b.jitter {
 		jitter = time.Duration(rand.Int64N(b.baseDelay.Milliseconds())) * time.Millisecond
 	}
 	delay := b.baseDelay*time.Duration(math.Pow(2, float64(retries))) + jitter
