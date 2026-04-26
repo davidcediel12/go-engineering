@@ -25,22 +25,23 @@ func New(options ...Option) *Backoff {
 }
 
 func (b *Backoff) Do(ctx context.Context, operation func() error) error {
+	var err error
+	if err = operation(); err == nil {
+		return nil
+	}
 	retries := 0
 	succeed := false
 	for !succeed && retries <= b.retries {
+		log.Printf("operation failed, retrying: %v", err)
+		delay := b.getDelay(retries)
+		log.Printf("Waiting %d ms to perform the operation", delay.Milliseconds())
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay): // Exponential backoff
+		}
 		if err := operation(); err != nil {
-			log.Printf("operation failed, retrying: %v", err)
-
-			jitter := time.Duration(rand.Int64N(b.baseDelay.Milliseconds()))
-			delay := b.baseDelay*time.Duration(math.Pow(2, float64(retries))) + jitter
-			log.Printf("Waiting %d ms to perform the operation", delay)
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(delay): // Exponential backoff
-			}
 			retries++
-
 		} else {
 			succeed = true
 		}
@@ -49,4 +50,16 @@ func (b *Backoff) Do(ctx context.Context, operation func() error) error {
 		return fmt.Errorf("operation failed after %d retries", b.retries)
 	}
 	return nil
+}
+
+func (b *Backoff) getDelay(retries int) time.Duration {
+	jitter := 0 * time.Millisecond
+	if b.jtter {
+		jitter = time.Duration(rand.Int64N(b.baseDelay.Milliseconds())) * time.Millisecond
+	}
+	delay := b.baseDelay*time.Duration(math.Pow(2, float64(retries))) + jitter
+	if delay.Milliseconds() >= b.maxDelay.Milliseconds() {
+		delay = b.maxDelay
+	}
+	return delay
 }
