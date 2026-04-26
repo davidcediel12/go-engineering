@@ -7,4 +7,7 @@ require (
 	golang.org/x/tour v0.1.0
 )
 
-require github.com/brianvoe/gofakeit/v7 v7.14.1
+require (
+	github.com/brianvoe/gofakeit/v7 v7.14.1
+	go.uber.org/mock v0.6.0
+)
