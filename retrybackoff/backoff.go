@@ -43,7 +43,7 @@ func (b *Backoff) Do(ctx context.Context, operation func() error) error {
 	}
 	retries := 0
 	succeed := false
-	for !succeed && retries <= b.retries {
+	for !succeed && retries < b.retries {
 		log.Printf("operation failed, retrying: %v", err)
 		delay := b.getDelay(retries)
 		log.Printf("Waiting %d ms to perform the operation", delay.Milliseconds())
