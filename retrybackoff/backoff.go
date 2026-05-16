@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+const (
+	DefaultRetries   = 3
+	DefaultJitter    = true
+	DefaultBaseDelay = 200 * time.Millisecond
+	DefaultMaxDelay  = 3 * time.Second
+)
+
 type Backoff struct {
 	retries   int
 	jitter    bool
@@ -18,10 +25,10 @@ type Backoff struct {
 
 func New(options ...Option) *Backoff {
 	b := &Backoff{
-		retries:   3,
-		jitter:    true,
-		baseDelay: 200 * time.Millisecond,
-		maxDelay:  3 * time.Second,
+		retries:   DefaultRetries,
+		jitter:    DefaultJitter,
+		baseDelay: DefaultBaseDelay,
+		maxDelay:  DefaultMaxDelay,
 	}
 	for _, opt := range options {
 		opt(b)
