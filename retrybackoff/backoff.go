@@ -45,7 +45,7 @@ func (b *Backoff) Do(ctx context.Context, operation func() error) error {
 	succeed := false
 	for !succeed && retries < b.retries {
 		log.Printf("operation failed, retrying: %v", err)
-		delay := b.getDelay(retries)
+		delay := b.delay(retries)
 		log.Printf("Waiting %d ms to perform the operation", delay.Milliseconds())
 		select {
 		case <-ctx.Done():
@@ -64,14 +64,26 @@ func (b *Backoff) Do(ctx context.Context, operation func() error) error {
 	return nil
 }
 
-func (b *Backoff) getDelay(retries int) time.Duration {
+func (b *Backoff) delay(retries int) time.Duration {
 	jitter := 0 * time.Millisecond
 	if b.jitter {
 		jitter = time.Duration(rand.Int64N(b.baseDelay.Milliseconds())) * time.Millisecond
 	}
-	delay := b.baseDelay*time.Duration(math.Pow(2, float64(retries))) + jitter
+	delay := b.baseDelay * time.Duration(math.Pow(2, float64(retries)))
 	if delay.Milliseconds() >= b.maxDelay.Milliseconds() {
 		delay = b.maxDelay
 	}
-	return delay
+	return delay + jitter
+}
+
+func (b *Backoff) BaseDelay() time.Duration {
+	return b.baseDelay
+}
+
+func (b *Backoff) Retries() int {
+	return b.retries
+}
+
+func (b *Backoff) MaxDelay() time.Duration {
+	return b.maxDelay
 }
