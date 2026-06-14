@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/davidcediel12/go-engineering/paymentprocessor/domain"
 	"gorm.io/gorm"
 )
 
@@ -26,6 +28,23 @@ func NewPaymentProcessRepo(db *gorm.DB) *PaymentProcessRepo {
 		db: db,
 	}
 }
-func (r *PaymentProcessRepo) Create() {
 
+func (r *PaymentProcessRepo) Create(p domain.PaymentProcess) error {
+	entity := fromDomain(p)
+	result := r.db.Create(&entity)
+	if result.Error != nil {
+		return fmt.Errorf("creating payment process: %w", result.Error)
+	}
+	return nil
+}
+
+func fromDomain(p domain.PaymentProcess) PaymentProcess {
+	return PaymentProcess{
+		ID:             p.ID,
+		Token:          p.Token.String(),
+		Status:         string(p.Status()),
+		Amount:         p.Amount,
+		LeaseExpiresAt: p.LeaseExpiresAt,
+		WorkerID:       p.WorkerID,
+	}
 }
