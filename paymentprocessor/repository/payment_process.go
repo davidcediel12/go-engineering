@@ -1,6 +1,10 @@
 package repository
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type PaymentProcess struct {
 	ID             uint       `gorm:"primaryKey"`
@@ -11,4 +15,17 @@ type PaymentProcess struct {
 	WorkerID       string     `gorm:"not null;type:varchar(32)"`
 	CreatedAt      time.Time  `gorm:"not null;<-:create"`
 	UpdatedAt      time.Time  `gorm:"not null"`
+}
+
+type PaymentProcessRepo struct {
+	db *gorm.DB
+}
+
+func NewPaymentProcessRepo(db *gorm.DB) *PaymentProcessRepo {
+	return &PaymentProcessRepo{
+		db: db,
+	}
+}
+func (r *PaymentProcessRepo) Create() {
+
 }
