@@ -12,7 +12,7 @@ import (
 
 type PaymentProcess struct {
 	ID             uint       `gorm:"primaryKey"`
-	Token          string     `gorm:"uniqueIndex;not null;type:varchar(32);<-:create"`
+	Token          string     `gorm:"uniqueIndex;not null;type:varchar(36);<-:create"`
 	Status         string     `gorm:"index:idx_status_lease_expiry,priority:1;not null;type:varchar(30)"`
 	Amount         int64      `gorm:"<-:create"`
 	OrderID        uint       `gorm:"index:idx_payment_process_order_id;not null;<-:create"`

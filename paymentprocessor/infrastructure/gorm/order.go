@@ -11,7 +11,7 @@ import (
 type Order struct {
 	ID         uint      `gorm:"primaryKey"`
 	Amount     int64     `gorm:"<-:create"`
-	PaidAmount int64     `gorm:"not null;<-:update"`
+	PaidAmount int64     `gorm:"not null;default:0;<-:update"`
 	CreatedAt  time.Time `gorm:"not null;<-:create"`
 	UpdatedAt  time.Time `gorm:"not null"`
 }
