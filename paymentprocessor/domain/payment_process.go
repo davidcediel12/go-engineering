@@ -54,20 +54,26 @@ func isTransitionValid(from, to PaymentProcessStatus) bool {
 type PaymentProcess struct {
 	ID             uint
 	Token          uuid.UUID
-	status         PaymentProcessStatus
+	Status         PaymentProcessStatus
 	Amount         int64
 	LeaseExpiresAt *time.Time
 	WorkerID       *string
+	OrderID        uint
 }
 
 func (p *PaymentProcess) TransitionTo(from, to PaymentProcessStatus) error {
 	if !isTransitionValid(from, to) {
 		return fmt.Errorf("Transition from %s to %s is not valid: %w", from, to, ErrInvalidTransition)
 	}
-	p.status = to
+	p.Status = to
 	return nil
 }
 
-func (p *PaymentProcess) Status() PaymentProcessStatus {
-	return p.status
+func NewPaymentProcess(token uuid.UUID, amount int64, orderID uint) PaymentProcess {
+	return PaymentProcess{
+		Token:   token,
+		Status:  Unprocessed,
+		Amount:  amount,
+		OrderID: orderID,
+	}
 }
