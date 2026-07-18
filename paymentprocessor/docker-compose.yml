@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: paymentprocessor-postgres
+    environment:
+      POSTGRES_USER: gorm
+      POSTGRES_PASSWORD: gorm
+      POSTGRES_DB: gorm
+    ports:
+      - "5433:5432"
+    volumes:
+      - paymentprocessor-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gorm -d gorm"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  paymentprocessor-postgres-data:
