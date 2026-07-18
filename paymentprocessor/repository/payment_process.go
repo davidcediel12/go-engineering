@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -29,9 +30,9 @@ func NewPaymentProcessRepo(db *gorm.DB) *PaymentProcessRepo {
 	}
 }
 
-func (r *PaymentProcessRepo) Create(p domain.PaymentProcess) error {
+func (r *PaymentProcessRepo) Create(ctx context.Context, p domain.PaymentProcess) error {
 	entity := fromDomain(p)
-	result := r.db.Create(&entity)
+	result := extractDB(ctx, r.db).Create(&entity)
 	if result.Error != nil {
 		return fmt.Errorf("creating payment process: %w", result.Error)
 	}
