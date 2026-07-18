@@ -20,6 +20,12 @@ type Repo struct {
 	db *gorm.DB
 }
 
+func NewOrderRepo(db *gorm.DB) *Repo {
+	return &Repo{
+		db: db,
+	}
+}
+
 func (r *Repo) Create(ctx context.Context, order domain.Order) (domain.Order, error) {
 	entity := fromOrderDomain(order)
 	if err := extractDB(ctx, r.db).Create(&entity).Error; err != nil {

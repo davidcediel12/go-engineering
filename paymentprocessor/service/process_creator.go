@@ -6,7 +6,6 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/davidcediel12/go-engineering/paymentprocessor/domain"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type PaymentProcessCreator interface {
@@ -21,13 +20,21 @@ type TxManager interface {
 	WithinTransaction(ctx context.Context, process func(ctx context.Context) error) error
 }
 
-type processCreator struct {
+type ProcessCreator struct {
 	paymentCreator PaymentProcessCreator
 	orderCreator   OrderCreator
 	txManager      TxManager
 }
 
-func (c *processCreator) CreateRandomPaymentProcesses(ctx context.Context, db *gorm.DB, n int) error {
+func NewProcessCreator(paymentCreator PaymentProcessCreator, orderCreator OrderCreator, txManager TxManager) *ProcessCreator {
+	return &ProcessCreator{
+		paymentCreator: paymentCreator,
+		orderCreator:   orderCreator,
+		txManager:      txManager,
+	}
+}
+
+func (c *ProcessCreator) CreateRandomPaymentProcesses(ctx context.Context, n int) error {
 	for range n {
 		c.txManager.WithinTransaction(ctx, func(ctx context.Context) error {
 			var err error
