@@ -57,7 +57,7 @@ type PaymentProcess struct {
 	status         PaymentProcessStatus
 	Amount         int64
 	LeaseExpiresAt *time.Time
-	WorkerID       string
+	WorkerID       *string
 }
 
 func (p *PaymentProcess) TransitionTo(from, to PaymentProcessStatus) error {
